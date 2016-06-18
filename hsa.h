@@ -1,7 +1,9 @@
-#define NUM_OF_COMMODITIES  15
-#define NUM_OF_PORTS        62
+#include <stdlib.h>
 
-enum hsaCommodityType
+#define HSA_NUM_OF_COMMODITIES  15
+#define HSA_NUM_OF_PORTS        62
+
+typedef enum
 {
     HSA_COFFEE = 0,
     HSA_GRAIN = 1,
@@ -18,53 +20,67 @@ enum hsaCommodityType
     HSA_LIQUOR = 12,
     HSA_OPIUM = 13,
     HSA_TOBACCO = 14
-};
+} hsaCommodityType;
 
-typedef struct hsaCommodity
+typedef struct
 {
-    hsaCommodityType    type;
     int                 quantity;
     int                 buyFor;
     int                 sellFor;
-};
+} hsaCommodity;
 
-typedef struct hsaPort
+typedef struct
 {
-    char*           name;
-    hsaCommodity    commodites[NUM_OF_COMMODITIES];
-};
+    char            name[20];
+    hsaCommodity    commodities[HSA_NUM_OF_COMMODITIES];
+} hsaPort;
 
-typedef struct hsaGameData
+typedef struct
 {
     int         gold;
-    char*       playerName;
-    char*       shipName;
-    hsaPort     ports[NUM_OF_PORTS];
-};
+    char        playerName[20];
+    char        shipName[20];
+    hsaPort     ports[HSA_NUM_OF_PORTS];
+} hsaGameData;
 
-hsaGameData hsaLoadFile(const char* filename)
+void hsaLoadPort(FILE* file, hsaPort* const port)
 {
-    hasGameData gameData;
-    
-    //load file
-    //jump to 1878
-    //for each port
-    //  read name
-    //      for each commodity
-    //          read quantity
-    //      for each commodity
-    //          read buy price
-    //          calculate sell price
-    //
-    //jump to 973f
-    //read gold
-    //read player name
-    //read ship name
-    
-    return gameData;
+    fread(port->name, 1, 20, file);
+
+    fseek(file, 373, SEEK_CUR);
+    for (int i = 0; i < HSA_NUM_OF_COMMODITIES; ++i)
+    {
+        fread(&port->commodities[i].quantity, 4, 1, file);
+    }
+
+    for (int i = 0; i < HSA_NUM_OF_COMMODITIES; ++i)
+    {
+        fread(&port->commodities[i].buyFor, 4, 1, file);
+        port->commodities[i].sellFor = port->commodities[i].buyFor * 0.91;
+    }
 }
 
-void hsaToCsv(const char* filename)
+void hsaLoadFile(const char* filename, hsaGameData* const gameData)
 {
-    
+    FILE* file = fopen(filename, "rb");
+
+    fseek(file, 6264, SEEK_SET);
+
+    for (int i = 0; i < HSA_NUM_OF_PORTS; ++i)
+    {
+        hsaLoadPort(file, &gameData->ports[i]);
+        fseek(file, 6, SEEK_CUR);
+    }
+
+    fseek(file, 38719, SEEK_SET);
+    fread(&gameData->gold, 4, 1, file);
+    fread(&gameData->playerName, 1, 20, file);
+    fread(&gameData->shipName, 1, 20, file);
+
+    fclose(file);
+}
+
+void hsaToCsv(const hsaGameData* const gameData, const char* filename)
+{
+
 }
