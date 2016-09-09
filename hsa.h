@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <stdio.h>
 
 #define HSA_NUM_OF_COMMODITIES  15
 #define HSA_NUM_OF_PORTS        62
@@ -22,6 +22,8 @@ typedef enum
     HSA_TOBACCO = 14
 } hsaCommodityType;
 
+const char* const hsaCommodityNames[HSA_NUM_OF_COMMODITIES] = {"COFFEE", "GRAIN", "SUGAR", "TEA", "ARMS", "COTTON", "WOOL", "FURS", "IVORY", "JEWELRY", "SILK", "SPICES", "LIQUOR", "OPIUM", "TOBACCO"};
+
 typedef struct
 {
     int                 quantity;
@@ -43,44 +45,78 @@ typedef struct
     hsaPort     ports[HSA_NUM_OF_PORTS];
 } hsaGameData;
 
-void hsaLoadPort(FILE* file, hsaPort* const port)
+hsaPort hsaLoadPort(FILE* file)
 {
-    fread(port->name, 1, 20, file);
+    hsaPort port;
+
+    fread(port.name, 1, 20, file);
 
     fseek(file, 373, SEEK_CUR);
     for (int i = 0; i < HSA_NUM_OF_COMMODITIES; ++i)
     {
-        fread(&port->commodities[i].quantity, 4, 1, file);
+        fread(&port.commodities[i].quantity, 4, 1, file);
     }
 
     for (int i = 0; i < HSA_NUM_OF_COMMODITIES; ++i)
     {
-        fread(&port->commodities[i].buyFor, 4, 1, file);
-        port->commodities[i].sellFor = port->commodities[i].buyFor * 0.91;
+        fread(&port.commodities[i].buyFor, 4, 1, file);
+        port.commodities[i].sellFor = port.commodities[i].buyFor * 0.91;
     }
+
+    return port;
 }
 
-void hsaLoadFile(const char* filename, hsaGameData* const gameData)
+hsaGameData hsaLoadFile(const char* filename)
 {
+    hsaGameData gameData;
+
     FILE* file = fopen(filename, "rb");
 
     fseek(file, 6264, SEEK_SET);
 
     for (int i = 0; i < HSA_NUM_OF_PORTS; ++i)
     {
-        hsaLoadPort(file, &gameData->ports[i]);
+        gameData.ports[i] = hsaLoadPort(file);
         fseek(file, 6, SEEK_CUR);
     }
 
     fseek(file, 38719, SEEK_SET);
-    fread(&gameData->gold, 4, 1, file);
-    fread(&gameData->playerName, 1, 20, file);
-    fread(&gameData->shipName, 1, 20, file);
+    fread(&gameData.gold, 4, 1, file);
+    fread(&gameData.playerName, 1, 20, file);
+    fread(&gameData.shipName, 1, 20, file);
 
     fclose(file);
+
+    return gameData;
 }
 
-void hsaToCsv(const hsaGameData* const gameData, const char* filename)
+void hsaWriteXml(const hsaGameData gameData, const char* const filename)
 {
+    FILE* file = fopen(filename, "w");
 
+    fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n");
+    fprintf(file, "<gamedata>\n");
+
+    for (unsigned int portIndex = 0; portIndex < HSA_NUM_OF_PORTS; ++portIndex)
+    {
+        fprintf(file, "\t<port>\n");
+        fprintf(file, "\t\t<name>%s</name>\n", gameData.ports[portIndex].name);
+        fprintf(file, "\t\t<commodities>\n");
+
+        for (unsigned int commodityIndex = 0; commodityIndex < HSA_NUM_OF_COMMODITIES; ++commodityIndex)
+        {
+            fprintf(file, "\t\t\t<commodity>\n");
+            fprintf(file, "\t\t\t\t<name>%s</name>\n", hsaCommodityNames[commodityIndex]);
+            fprintf(file, "\t\t\t\t<quantity>%d</quantity>\n", gameData.ports[portIndex].commodities[commodityIndex].quantity);
+            fprintf(file, "\t\t\t\t<buy>%d</buy>\n", gameData.ports[portIndex].commodities[commodityIndex].buyFor);
+            fprintf(file, "\t\t\t\t<sell>%d</sell>\n", gameData.ports[portIndex].commodities[commodityIndex].sellFor);
+            fprintf(file, "\t\t\t</commodity>\n");
+        }
+
+        fprintf(file, "\t\t</commodities>\n");
+        fprintf(file, "\t</port>\n");
+    }
+
+    fprintf(file, "</gamedata>\n");
+    fclose(file);
 }
