@@ -96,27 +96,31 @@ void hsaWriteXml(const hsaGameData gameData, const char* const filename)
 
     fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n");
     fprintf(file, "<gamedata>\n");
+    fprintf(file, "\t<player>%s</player>\n", gameData.playerName);
+    fprintf(file, "\t<ship>%s</ship>\n", gameData.shipName);
+    fprintf(file, "\t<ports>\n");
 
     for (unsigned int portIndex = 0; portIndex < HSA_NUM_OF_PORTS; ++portIndex)
     {
-        fprintf(file, "\t<port>\n");
-        fprintf(file, "\t\t<name>%s</name>\n", gameData.ports[portIndex].name);
-        fprintf(file, "\t\t<commodities>\n");
+        fprintf(file, "\t\t<port>\n");
+        fprintf(file, "\t\t\t<name>%s</name>\n", gameData.ports[portIndex].name);
+        fprintf(file, "\t\t\t<commodities>\n");
 
         for (unsigned int commodityIndex = 0; commodityIndex < HSA_NUM_OF_COMMODITIES; ++commodityIndex)
         {
-            fprintf(file, "\t\t\t<commodity>\n");
-            fprintf(file, "\t\t\t\t<name>%s</name>\n", hsaCommodityNames[commodityIndex]);
-            fprintf(file, "\t\t\t\t<quantity>%d</quantity>\n", gameData.ports[portIndex].commodities[commodityIndex].quantity);
-            fprintf(file, "\t\t\t\t<buy>%d</buy>\n", gameData.ports[portIndex].commodities[commodityIndex].buyFor);
-            fprintf(file, "\t\t\t\t<sell>%d</sell>\n", gameData.ports[portIndex].commodities[commodityIndex].sellFor);
-            fprintf(file, "\t\t\t</commodity>\n");
+            fprintf(file, "\t\t\t\t<commodity>\n");
+            fprintf(file, "\t\t\t\t\t<name>%s</name>\n", hsaCommodityNames[commodityIndex]);
+            fprintf(file, "\t\t\t\t\t<quantity>%d</quantity>\n", gameData.ports[portIndex].commodities[commodityIndex].quantity);
+            fprintf(file, "\t\t\t\t\t<buy>%d</buy>\n", gameData.ports[portIndex].commodities[commodityIndex].buyFor);
+            fprintf(file, "\t\t\t\t\t<sell>%d</sell>\n", gameData.ports[portIndex].commodities[commodityIndex].sellFor);
+            fprintf(file, "\t\t\t\t</commodity>\n");
         }
 
-        fprintf(file, "\t\t</commodities>\n");
-        fprintf(file, "\t</port>\n");
+        fprintf(file, "\t\t\t</commodities>\n");
+        fprintf(file, "\t\t</port>\n");
     }
 
+    fprintf(file, "\t</ports>\n");
     fprintf(file, "</gamedata>\n");
     fclose(file);
 }
